@@ -2,6 +2,8 @@ package com.cloud.exception.handler;
 
 import com.cloud.exception.vo.ErrorResponse;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,9 +20,11 @@ import javax.servlet.http.HttpServletResponse;
 @RestControllerAdvice
 public class CommonExceptionHandler {
     private static final String SYS_EXCEPTION_CODE = "000000";
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @ExceptionHandler({Exception.class})
     public ResponseEntity<ErrorResponse> exceptionHandler(Exception exception, HttpServletRequest request, HttpServletResponse response) {
+        logger.error("请求失败", exception);
         ErrorResponse responseData = new ErrorResponse();
         String message = exception.getMessage();
         ResponseEntity<ErrorResponse> responseEntity = null;
