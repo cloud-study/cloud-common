@@ -1,13 +1,14 @@
 package com.cloud.security.filter;
 
 
-import com.cloud.config.JwtSettings;
+import com.cloud.security.JwtConfig;
 import com.cloud.security.model.UserContext;
 import com.cloud.security.model.token.JwtAuthenticationToken;
 import com.cloud.security.model.token.RawAccessJwtToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -30,19 +31,17 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
-    @Autowired
-    private  JwtSettings jwtSettings;
-    
-//    @Autowired
-//    public JwtAuthenticationProvider(JwtSettings jwtSettings) {
-//        this.jwtSettings = jwtSettings;
-//    }
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    private String tokenSigningKey = JwtConfig.tokenSigningKey;
+
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         RawAccessJwtToken rawAccessToken = (RawAccessJwtToken) authentication.getCredentials();
 
-        Jws<Claims> jwsClaims = rawAccessToken.parseClaims(jwtSettings.getTokenSigningKey());
+        logger.info("signingKey is {}", tokenSigningKey);
+        Jws<Claims> jwsClaims = rawAccessToken.parseClaims(tokenSigningKey);
 
         // 从jwsClaims中获取相关数据
 
@@ -55,8 +54,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         UserContext context = UserContext.create(subject, authorities);
 
         // TODO
-        // ??  此处context.getAuthorities()  代表用户所拥有的角色权限，
-        // ?? 直接在token中获取的， 应该从数据库
+        // ?????  此处context.getAuthorities()  代表用户所拥有的角色权限，直接在token中获取的. 应该从数据库实时获取  ???
         return new JwtAuthenticationToken(context, context.getAuthorities());
     }
 

@@ -1,6 +1,6 @@
 package com.cloud.security.model.token;
 
-import com.cloud.security.exception.JwtExpiredTokenException;
+import com.cloud.security.exception.JwtAuthenticationException;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ public class RawAccessJwtToken implements JwtToken {
      * Parses and validates JWT Token signature.
      * 
      * @throws BadCredentialsException
-     * @throws JwtExpiredTokenException
+     * @throws JwtAuthenticationException
      * 
      */
     public Jws<Claims> parseClaims(String signingKey) {
@@ -30,7 +30,7 @@ public class RawAccessJwtToken implements JwtToken {
             throw new BadCredentialsException("Invalid JWT token: ", ex);
         } catch (ExpiredJwtException expiredEx) {
             logger.info("JWT Token is expired", expiredEx);
-            throw new JwtExpiredTokenException(this, "JWT Token expired", expiredEx);
+            throw new JwtAuthenticationException("JWT Token expired", expiredEx);
         }
     }
 

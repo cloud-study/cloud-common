@@ -3,6 +3,8 @@ package com.cloud.security.handler;
  * Created by neng.liu@hand-china.com on 2017/3/24.
  */
 
+import com.cloud.exception.vo.ErrorResponse;
+import com.cloud.security.exception.JwtAuthenticationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,7 +22,7 @@ import java.io.IOException;
  * @author neng.liu@hand-china.com	2017/3/24 09:35
  * @description
  */
-//@Component
+@Component
 public class JwtAuthenticationFailureHandler implements AuthenticationFailureHandler {
     private final ObjectMapper mapper;
 
@@ -36,15 +38,10 @@ public class JwtAuthenticationFailureHandler implements AuthenticationFailureHan
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        mapper.writeValue(response.getWriter(), "error");
-//        if (e instanceof BadCredentialsException) {
-//            mapper.writeValue(response.getWriter(), ErrorResponse.of("Invalid username or password", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
-//        } else if (e instanceof JwtExpiredTokenException) {
-//            mapper.writeValue(response.getWriter(), ErrorResponse.of("Token has expired", ErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED));
-//        } else if (e instanceof AuthMethodNotSupportedException) {
-//            mapper.writeValue(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
-//        }
-//
-//        mapper.writeValue(response.getWriter(), ErrorResponse.of("Authentication failed", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+        if (e instanceof JwtAuthenticationException) {
+            mapper.writeValue(response.getWriter(), new ErrorResponse().setCode("UNAUTHORIZED").setMessage(e.getMessage()));
+        }
+
+        mapper.writeValue(response.getWriter(), new ErrorResponse().setCode("UNAUTHORIZED").setMessage("Authentication failed"));
     }
 }

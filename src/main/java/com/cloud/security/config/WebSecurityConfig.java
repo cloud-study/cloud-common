@@ -1,12 +1,8 @@
 package com.cloud.security.config;
 
-import com.cloud.security.auth.ajax.AjaxAuthenticationProvider;
-import com.cloud.security.auth.ajax.AjaxLoginProcessingFilter;
 import com.cloud.security.extractor.TokenExtractor;
 import com.cloud.security.filter.JwtAuthenticationProvider;
 import com.cloud.security.filter.JwtTokenAuthenticationProcessingFilter;
-import com.cloud.security.filter.SkipPathRequestMatcher;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +14,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * WebSecurityConfig
@@ -37,18 +30,12 @@ import java.util.List;
 @EnableGlobalMethodSecurity(prePostEnabled = true)  //开启Spring方法级安全
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public static final String AUTHENTICATION_HEADER_NAME = "Authorization";
-    public static final String AUTHENTICATION_URL = "/api/auth/login";
-    public static final String REFRESH_TOKEN_URL = "/api/auth/token";
-    public static final String API_ROOT_URL = "/api/**";
+    public static final String API_SAFE_URL = "/api/**/sec/**";
 //
 //    @Autowired
 //    private RestAuthenticationEntryPoint authenticationEntryPoint;
     @Autowired
-    private AuthenticationSuccessHandler successHandler;
-    @Autowired
     private AuthenticationFailureHandler failureHandler;
-    @Autowired
-    private AjaxAuthenticationProvider ajaxAuthenticationProvider;
     @Autowired
     private JwtAuthenticationProvider jwtAuthenticationProvider;
 
@@ -58,21 +45,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
 
     protected JwtTokenAuthenticationProcessingFilter buildJwtTokenAuthenticationProcessingFilter() throws Exception {
-//        SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, pattern);
-        AntPathRequestMatcher matcher = new AntPathRequestMatcher("/api/**/sec/**");
+        AntPathRequestMatcher matcher = new AntPathRequestMatcher(API_SAFE_URL);
         JwtTokenAuthenticationProcessingFilter filter
             = new JwtTokenAuthenticationProcessingFilter(failureHandler, tokenExtractor, matcher);
-        filter.setAuthenticationManager(this.authenticationManager);
-        return filter;
-    }
-
-    protected AjaxLoginProcessingFilter buildAjaxLoginProcessingFilter(String loginEntryPoint) throws Exception {
-        AjaxLoginProcessingFilter filter = new AjaxLoginProcessingFilter(loginEntryPoint, successHandler, failureHandler, objectMapper);
         filter.setAuthenticationManager(this.authenticationManager);
         return filter;
     }
@@ -85,7 +62,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(ajaxAuthenticationProvider);
         auth.authenticationProvider(jwtAuthenticationProvider);
     }
     
@@ -100,10 +76,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                .antMatchers("/api/**/sec/**").authenticated()
+                .antMatchers(API_SAFE_URL).authenticated()
                 .anyRequest().permitAll()
                 .and()
-                .addFilterBefore(buildAjaxLoginProcessingFilter(AUTHENTICATION_URL), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(buildJwtTokenAuthenticationProcessingFilter(),UsernamePasswordAuthenticationFilter.class);
     }
 }
